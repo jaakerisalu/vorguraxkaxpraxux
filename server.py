@@ -50,14 +50,28 @@ def get_machines():
     return loc + res
 
 
-def init_cracker():
+def init_cracker(my_port, ttl=5, id="randomstring"):
     print('Initiating')
+
+    # Part 1: Send out the resource requests
     machines = get_machines()
     print("machines: " + str(machines))
 
+    noask_list = "&noask=".join([x.replace("http://", "").replace(":", "_") for x in machines])
+
+    """
+    Final url template:
+    http://11.22.33.44:2345/resource?sendip=55.66.77.88&sendport=6788&ttl=5&id=wqeqwe23&noask=11.22.33.44_345&noask=111.222.333.444_223
+    """
+    params = "/resource?sendip=" + socket.gethostbyname(socket.gethostname())\
+             + "&sendport=" + str(my_port)\
+             + "&ttl=" + str(ttl)\
+             + "&id=" + str(id)\
+             + "&noask=" + noask_list
+
     for machine in machines:
         print("Trying to approach machine: " + machine)
-        req = urlr.Request(machine)
+        req = urlr.Request(machine + params)
         try:
             response = urlr.urlopen(req, timeout=1)
             r = response.read()
@@ -77,7 +91,7 @@ def run(port, is_first=False):
     httpd = server(server_address, handler)
 
     if not is_first:  # This is for testing and will eventually be deprecated
-        init_cracker()
+        init_cracker(port)
 
     print("My port is %s" % port)
     httpd.serve_forever()
