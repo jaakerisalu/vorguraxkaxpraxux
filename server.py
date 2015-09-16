@@ -26,21 +26,19 @@ class MyHandler(BaseHTTPRequestHandler):
         parser = urlparse(s.path)
         print(parser)
         if parser.path == "/resource":
+
             qs = parse_qs(parser.query)
+            # The server gets a request from themselves once they finish sending out all other requests. Ignore it
+            if int(qs['sendport'][0]) == CURRENT_SERVER_PORT and socket.gethostbyname(socket.gethostname()) == qs['sendip'][0]:
+                return
+
             print(parse_qs(parser.query))
             ttl = int(qs['ttl'][0]) - 1
             if ttl > 1:
                 make_resource_request(noask=["http://" + x.replace("_", ":") for x in qs['noask']], ttl=ttl, id=qs['id'][0])
-        else:
-            try:
-                s.wfile.write(bytes("<html><head><title>Title goes here.</title></head>", 'UTF-8'))
-                s.wfile.write(bytes("<body><p>This is a test.</p>", 'UTF-8'))
-                # If someone went to "http://something.somewhere.net/foo/bar/",
-                # then s.path equals "/foo/bar/".
-                s.wfile.write(bytes("<p>You accessed path: %s</p>" % s.path, 'UTF-8'))
-                s.wfile.write(bytes("</body></html>", 'UTF-8'))
-            except BrokenPipeError as e:
-                print('Broken pipe when connecting to myself, ignoring')
+
+            #MAKE RESPONSE
+            s.wfile.write(bytes("<html><head><title>you accessed path %s</title></head>" % s.path, 'UTF-8'))
 
 
 def get_machines():
@@ -65,19 +63,14 @@ def get_machines():
 def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
     if not noask:
         noask = []
-    print('Initiating')
 
     # Part 1: Send out the resource requests
     machines = get_machines()
-    print("machines: " + str(machines))
 
     # If there's a previous noask list, filter out machines we don't want to send to
+    # TODO: Add sender IP to noask
     if len(noask):
-        print("I HAVE A LIST OF MACHINES NOT TO SEND TO")
-        print(noask)
         machines = [x for x in machines if x not in noask]
-        print("THIS IS WHAT IS LEFT")
-        print(machines)
 
     noask_list = "&noask=".join([x.replace("http://", "").replace(":", "_") for x in machines + noask])
 
@@ -92,12 +85,10 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
              + "&noask=" + noask_list
 
     for machine in machines:
-        print("Trying to approach machine: " + machine)
         req = urlr.Request(machine + params)
         try:
             response = urlr.urlopen(req, timeout=1)
             r = response.read()
-            print(r)
         except URLError as e:
             print("Something is fukt, more specifically: " + str(e.reason))
         except socket.timeout as e:
@@ -119,7 +110,6 @@ def run(port):
 
     init_cracker()
 
-    print("My port is %s" % port)
     httpd.serve_forever()
 
 if __name__ == '__main__':
