@@ -19,12 +19,15 @@ class MyHandler(BaseHTTPRequestHandler):
         s.send_response(200)
         s.send_header("Content-type", "text/html")
         s.end_headers()
-        s.wfile.write(bytes("<html><head><title>Title goes here.</title></head>", 'UTF-8'))
-        s.wfile.write(bytes("<body><p>This is a test.</p>", 'UTF-8'))
-        # If someone went to "http://something.somewhere.net/foo/bar/",
-        # then s.path equals "/foo/bar/".
-        s.wfile.write(bytes("<p>You accessed path: %s</p>" % s.path, 'UTF-8'))
-        s.wfile.write(bytes("</body></html>", 'UTF-8'))
+        try:
+            s.wfile.write(bytes("<html><head><title>Title goes here.</title></head>", 'UTF-8'))
+            s.wfile.write(bytes("<body><p>This is a test.</p>", 'UTF-8'))
+            # If someone went to "http://something.somewhere.net/foo/bar/",
+            # then s.path equals "/foo/bar/".
+            s.wfile.write(bytes("<p>You accessed path: %s</p>" % s.path, 'UTF-8'))
+            s.wfile.write(bytes("</body></html>", 'UTF-8'))
+        except BrokenPipeError as e:
+            print('Broken pipe when connecting to myself, ignoring')
 
 
 def get_machines():
