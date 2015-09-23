@@ -17,6 +17,8 @@ class Md5Cracker:
             print("cracking " + self.tocrack + " gave " + res)
         else:
             print("failed to crack " + self.tocrack)
+        
+        return res
 
     def md5_crack(self, hexhash, template):
         "instantiate template and crack all instatiations"
