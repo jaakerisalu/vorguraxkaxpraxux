@@ -23,10 +23,21 @@ class MyHandler(BaseHTTPRequestHandler):
         s.send_header("Content-type", "text/html")
         s.end_headers()
 
-        parser = urlparse(s.path)
-        print(parser)
-        if parser.path == "/resource":
+        print('Sain k2tte yo')
 
+        parser = urlparse(s.path)
+        # print(parser)
+
+
+        if parser.path == "/crack":
+            qs = parse_qs(parser.query)
+
+            print('MD5', qs['md5'])
+            make_resource_request(noask=["http://http://127.0.0.1:9000/"], ttl=5, id='yolocrack')
+
+
+
+        if parser.path == "/resource":
             qs = parse_qs(parser.query)
             # The server gets a request from themselves once they finish sending out all other requests. Ignore it
             if int(qs['sendport'][0]) == CURRENT_SERVER_PORT and socket.gethostbyname(socket.gethostname()) == qs['sendip'][0]:
@@ -86,6 +97,7 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
 
     for machine in machines:
         req = urlr.Request(machine + params)
+        # print(machine + params)
         try:
             response = urlr.urlopen(req, timeout=1)
             r = response.read()
@@ -107,8 +119,6 @@ def run(port):
     CURRENT_SERVER_PORT = port
 
     httpd = server(server_address, handler)
-
-    init_cracker()
 
     httpd.serve_forever()
 
