@@ -80,8 +80,8 @@ class MyHandler(BaseHTTPRequestHandler):
             if len(CURRENT_SERVER_STATUS['slaves']) == 3:
                 print(CURRENT_SERVER_STATUS['slaves'])
 
-        if is_boss:
-            post_test(md5)
+        # if is_boss:
+        #     post_test(md5)
 
 
 def get_machines():
