@@ -7,25 +7,26 @@ from socketserver import ThreadingMixIn
 import sys
 from urllib.error import URLError
 from urllib.parse import urlparse, parse_qs
-import urllib3
+import urllib.request as urlr
 
 cgitb.enable()
-import urllib.request as urlr
 
 CURRENT_SERVER_STATUS = {'slaves':[]}
 
+
 class MyHandler(BaseHTTPRequestHandler):
     def do_HEAD(s):
-         s.send_response(200)
-         s.send_header("Content-type", "text/html")
-         s.end_headers()
-
-    def do_POST(s):
         s.send_response(200)
         s.send_header("Content-type", "text/html")
         s.end_headers()
 
-        print("POST YO", s.path)
+    def do_POST(s):
+        s.send_response(200)
+        s.end_headers()
+        length = int(s.headers['Content-Length'])
+        post_data = urllib.parse.parse_qs(s.rfile.read(length).decode('utf-8'))
+
+        print("POST YO", post_data)
 
     def do_GET(s):
         """Respond to a GET request."""
@@ -36,6 +37,10 @@ class MyHandler(BaseHTTPRequestHandler):
         print('GET')
 
         parser = urlparse(s.path)
+
+        is_boss = False
+        md5 = ""
+
         print(parser)
 
         if parser.path == "/crack":
@@ -43,6 +48,9 @@ class MyHandler(BaseHTTPRequestHandler):
             print('MD5', qs['md5'])
             make_resource_request(noask=["http://127.0.0.1:%s" % CURRENT_SERVER_STATUS['port']], ttl=5, id='yolocrack')
             CURRENT_SERVER_STATUS['waiting'] = True
+
+            md5 = qs['md5']
+            is_boss = True
 
         if parser.path == "/resource":
             qs = parse_qs(parser.query)
@@ -54,9 +62,8 @@ class MyHandler(BaseHTTPRequestHandler):
             ttl = int(qs['ttl'][0]) - 1
             if ttl > 1:
                 make_resource_request(noask=["http://" + x.replace("_", ":") for x in qs['noask']], ttl=ttl, id=qs['id'][0])
-                post_test()
 
-            #MAKE RESPONSE
+            # MAKE RESPONSE
             if not CURRENT_SERVER_STATUS['waiting']:
                 print('I must respond')
                 make_ready_response(qs['sendip'][0] + ":" + qs['sendport'][0])
@@ -69,8 +76,13 @@ class MyHandler(BaseHTTPRequestHandler):
                 'resource_amount': qs['available'][0]
             })
 
+
             if len(CURRENT_SERVER_STATUS['slaves']) == 3:
                 print(CURRENT_SERVER_STATUS['slaves'])
+
+        if is_boss:
+            post_test(md5)
+
 
 def get_machines():
     """
@@ -90,6 +102,7 @@ def get_machines():
         loc = ["http://" + ":".join(x) for x in json.loads(file.read())]
 
     return loc + res
+
 
 def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
     if not noask:
@@ -126,6 +139,7 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
         except socket.timeout as e:
             print("Socket timed out, moving on")
 
+
 def make_ready_response(target):
     params = "/ready?sendip=" + socket.gethostbyname(socket.gethostname())\
              + "&sendport=" + str(CURRENT_SERVER_STATUS['port'])\
@@ -140,14 +154,20 @@ def make_ready_response(target):
     except socket.timeout as e:
         print("Socket timed out on success")
 
-def post_test():
+
+def post_test(md5):
     print("POSTIN")
-    url="http://127.0.0.1:9003/"
-    values = {"yolo": "swag",
-              'asd': 'dsa'
+    url="http://127.0.0.1:9002/"
+    values = {"ip": socket.gethostbyname(socket.gethostname()),
+              "port": CURRENT_SERVER_STATUS['port'],
+              "md5": md5,
+              "ranges": ["ax?o?ssss","aa","ab","ac","ad"],
+              "wildcard": "?",
+              "symbolrange": [[3,10],[100,150]]
             }
+
     data = urllib.parse.urlencode(values)
-    binary_data = data.encode('ascii')
+    binary_data = data.encode('utf-8')
     req = urllib.request.Request(url, binary_data)
     try:
         print("Req", req)
@@ -156,13 +176,16 @@ def post_test():
     except urlr.http.client.HTTPException as e:
         print(e)
 
+
 def init_cracker():
     make_resource_request()
     # peaks time outima, vastuseid ootama.
 
+
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     pass
     # top le kek
+
 
 def run(port):
     server = ThreadedHTTPServer
