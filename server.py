@@ -1,5 +1,5 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import cgitb;
+from http.server import HTTPServer, BaseHTTPRequestHandler, urllib
+import cgitb
 import json
 import random
 import socket
@@ -7,6 +7,7 @@ from socketserver import ThreadingMixIn
 import sys
 from urllib.error import URLError
 from urllib.parse import urlparse, parse_qs
+import urllib3
 
 cgitb.enable()
 import urllib.request as urlr
@@ -18,6 +19,13 @@ class MyHandler(BaseHTTPRequestHandler):
          s.send_response(200)
          s.send_header("Content-type", "text/html")
          s.end_headers()
+
+    def do_POST(s):
+        s.send_response(200)
+        s.send_header("Content-type", "text/html")
+        s.end_headers()
+
+        print("POST YO", s.path)
 
     def do_GET(s):
         """Respond to a GET request."""
@@ -32,7 +40,6 @@ class MyHandler(BaseHTTPRequestHandler):
 
         if parser.path == "/crack":
             qs = parse_qs(parser.query)
-
             print('MD5', qs['md5'])
             make_resource_request(noask=["http://127.0.0.1:%s" % CURRENT_SERVER_STATUS['port']], ttl=5, id='yolocrack')
             CURRENT_SERVER_STATUS['waiting'] = True
@@ -47,6 +54,7 @@ class MyHandler(BaseHTTPRequestHandler):
             ttl = int(qs['ttl'][0]) - 1
             if ttl > 1:
                 make_resource_request(noask=["http://" + x.replace("_", ":") for x in qs['noask']], ttl=ttl, id=qs['id'][0])
+                post_test()
 
             #MAKE RESPONSE
             if not CURRENT_SERVER_STATUS['waiting']:
@@ -118,7 +126,6 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
         except socket.timeout as e:
             print("Socket timed out, moving on")
 
-
 def make_ready_response(target):
     params = "/ready?sendip=" + socket.gethostbyname(socket.gethostname())\
              + "&sendport=" + str(CURRENT_SERVER_STATUS['port'])\
@@ -132,6 +139,22 @@ def make_ready_response(target):
         print("Success response failed " + str(e.reason))
     except socket.timeout as e:
         print("Socket timed out on success")
+
+def post_test():
+    print("POSTIN")
+    url="http://127.0.0.1:9003/"
+    values = {"yolo": "swag",
+              'asd': 'dsa'
+            }
+    data = urllib.parse.urlencode(values)
+    binary_data = data.encode('ascii')
+    req = urllib.request.Request(url, binary_data)
+    try:
+        print("Req", req)
+        response = urllib.request.urlopen(req)
+        the_page = response.read()
+    except urlr.http.client.HTTPException as e:
+        print(e)
 
 def init_cracker():
     make_resource_request()
