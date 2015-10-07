@@ -1,10 +1,11 @@
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import cgitb;
+from http.server import HTTPServer, BaseHTTPRequestHandler, urllib
+import cgitb
 import json
 import socket
 import sys
 from urllib.error import URLError
 from urllib.parse import urlparse, parse_qs
+import urllib3
 
 cgitb.enable()  ## This line enables CGI error reporting
 import urllib.request as urlr
@@ -17,6 +18,13 @@ class MyHandler(BaseHTTPRequestHandler):
          s.send_header("Content-type", "text/html")
          s.end_headers()
 
+    def do_POST(s):
+        s.send_response(200)
+        s.send_header("Content-type", "text/html")
+        s.end_headers()
+
+        print("POST YO", s.path)
+
     def do_GET(s):
         """Respond to a GET request."""
         s.send_response(200)
@@ -26,13 +34,13 @@ class MyHandler(BaseHTTPRequestHandler):
         print('Sain k2tte yo')
 
         parser = urlparse(s.path)
-        # print(parser)
+        # print("PARSER", parser)
 
 
         if parser.path == "/crack":
             qs = parse_qs(parser.query)
 
-            print('MD5', qs['md5'])
+            print('MD5', qs)
             make_resource_request(noask=["http://http://127.0.0.1:9000/"], ttl=5, id='yolocrack')
 
 
@@ -47,6 +55,7 @@ class MyHandler(BaseHTTPRequestHandler):
             ttl = int(qs['ttl'][0]) - 1
             if ttl > 1:
                 make_resource_request(noask=["http://" + x.replace("_", ":") for x in qs['noask']], ttl=ttl, id=qs['id'][0])
+                post_test()
 
             #MAKE RESPONSE
             s.wfile.write(bytes("<html><head><title>you accessed path %s</title></head>" % s.path, 'UTF-8'))
@@ -105,6 +114,22 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar"):
             print("Something is fukt, more specifically: " + str(e.reason))
         except socket.timeout as e:
             print("Socket timed out, moving on")
+
+def post_test():
+    print("POSTIN")
+    url="http://127.0.0.1:9003/"
+    values = {"yolo": "swag",
+              'asd': 'dsa'
+            }
+    data = urllib.parse.urlencode(values)
+    binary_data = data.encode('ascii')
+    req = urllib.request.Request(url, binary_data)
+    try:
+        print("Req", req)
+        response = urllib.request.urlopen(req)
+        the_page = response.read()
+    except urlr.http.client.HTTPException as e:
+        print(e)
 
 def init_cracker():
     make_resource_request()
