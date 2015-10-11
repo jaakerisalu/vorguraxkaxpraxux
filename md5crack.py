@@ -3,38 +3,38 @@ import hashlib
 
 class Md5Cracker:
 
-    def __init__(self, tocrack, template, wildcard):
-        self.tocrack = tocrack
-        self.template = template
-        self.wildcard = wildcard
+    # def __init__(self, tocrack, template, wildcard):
+    #     self.tocrack = tocrack
+    #     self.template = template
+    #     self.wildcard = wildcard
 
-    def start(self):
-        print("Hash to crack:", self.tocrack)
+    def start(self, tocrack, template, wildcard):
+        print("Hash to crack:", tocrack)
 
-        res = self.md5_crack(self.tocrack, self.template)
+        res = self.md5_crack(tocrack, template, wildcard)
 
         if res:
-            print("cracking " + self.tocrack + " gave " + res)
+            print("cracking " + tocrack + " gave " + res)
         else:
-            print("failed to crack " + self.tocrack)
+            print("failed to crack " + tocrack)
         
         return res
 
-    def md5_crack(self, hexhash, template):
+    def md5_crack(self, hexhash, template, wildcard):
         "instantiate template and crack all instatiations"
         # first block recursively instantiates template
         i = 0
         found = False
         while i < len(template):
-            if template[i] == self.wildcard:
+            if template[i] == wildcard:
                 found = True
                 char = 32  # start with this char ascii
                 while char < 126:
                     c = chr(char)
-                    if c != self.wildcard:  # cannot check wildcard!
+                    if c != wildcard:  # cannot check wildcard!
                         ntemplate = template[:i] + c + template[i+1:]
                         print("i: "+str(i)+" ntemplate: "+ntemplate)
-                        res = self.md5_crack(hexhash, ntemplate)
+                        res = self.md5_crack(hexhash, ntemplate, wildcard)
                         if res:  # stop immediately if cracked
                             return res
                     char += 1
@@ -50,3 +50,8 @@ class Md5Cracker:
                 return template  # cracked!
         # template contains wildcards
         return None
+
+
+# c = Md5Cracker()
+# a = c.start("7815696ecbf1c96e6894b779456d330e", "a??", "?")
+
