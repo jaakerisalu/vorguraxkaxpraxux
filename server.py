@@ -1,6 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler, urllib
 import cgitb
-import socket
 from socketserver import ThreadingMixIn
 import sys
 from urllib.parse import urlparse, parse_qs
@@ -33,6 +32,8 @@ class MyHandler(BaseHTTPRequestHandler):
         if parser.path == "/startcrack":
             print("CHECK OUT MY CRACK YO", post_data)
 
+            globals.CURRENT_SERVER_STATUS['isfound'] = False
+
             template_list = list(ast.literal_eval(post_data['ranges'][0]))
 
             md5 = str(post_data['md5'][0])
@@ -51,9 +52,8 @@ class MyHandler(BaseHTTPRequestHandler):
                         return
 
         if parser.path == "/result":
-            print("RESULT", post_data)
-
             make_stop_request(post_data['ip'][0], post_data['port'][0])
+            print("RESULT", post_data['resultstring'])
 
     def do_GET(s):
         """Respond to a GET request."""

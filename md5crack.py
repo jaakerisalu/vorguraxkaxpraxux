@@ -16,7 +16,7 @@ class Md5Cracker:
         if res:
             print("cracking " + tocrack + " gave " + res)
         else:
-            print("failed to crack " + tocrack)
+            print("failed to crack " + tocrack, "| template:", template)
         
         return res
 
@@ -33,7 +33,7 @@ class Md5Cracker:
                     c = chr(char)
                     if c != wildcard:  # cannot check wildcard!
                         ntemplate = template[:i] + c + template[i+1:]
-                        print("i: "+str(i)+" ntemplate: "+ntemplate)
+                        # print("i: "+str(i)+" ntemplate: "+ntemplate)
                         res = self.md5_crack(hexhash, ntemplate, wildcard)
                         if res:  # stop immediately if cracked
                             return res
