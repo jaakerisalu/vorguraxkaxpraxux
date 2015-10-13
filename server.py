@@ -44,7 +44,7 @@ class MyHandler(BaseHTTPRequestHandler):
             for template in template_list:
                 if globals.CURRENT_SERVER_STATUS['isfound'] is False:
 
-                    if template.strip(wildcard) == '':
+                    if len(template) > 2 and template.strip(wildcard) == '':
                         continue
 
                     res = cracker.start(md5, template, wildcard)
@@ -54,9 +54,11 @@ class MyHandler(BaseHTTPRequestHandler):
                                               post_data['ip'][0], post_data['port'][0], md5, 0, res)
                         break
 
+            print("Cracking stopped")
+
         if parser.path == "/result":
             make_stop_request(post_data['ip'][0], post_data['port'][0])
-            print("RESULT", post_data['resultstring'])
+            print("RESULT:", post_data['resultstring'][0])
 
     def do_GET(s):
         """Respond to a GET request."""
@@ -67,9 +69,6 @@ class MyHandler(BaseHTTPRequestHandler):
         print('GET')
 
         parser = urlparse(s.path)
-
-        is_boss = False
-        md5 = ""
 
         print(parser)
 
