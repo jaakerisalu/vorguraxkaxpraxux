@@ -64,10 +64,11 @@ class MyHandler(BaseHTTPRequestHandler):
 
         if parser.path == "/resourcereply":
             print("I RECIEVED A RESPONCE FROM SLAVE")
-            globals.CURRENT_SERVER_STATUS['slaves'].append({
-                'ip': "http://" + post_data['ip'][0] + ":" + post_data['port'][0],
-                'resource_amount': post_data['resource'][0]
-            })
+            if str("http://" + post_data['ip'][0] + ":" + post_data['port'][0]) not in [x['ip'] for x in globals.CURRENT_SERVER_STATUS['slaves']]:
+                globals.CURRENT_SERVER_STATUS['slaves'].append({
+                    'ip': "http://" + post_data['ip'][0] + ":" + post_data['port'][0],
+                    'resource_amount': post_data['resource'][0]
+                })
 
             if len(globals.CURRENT_SERVER_STATUS['slaves']) == 3:
                 print(globals.CURRENT_SERVER_STATUS['slaves'])
