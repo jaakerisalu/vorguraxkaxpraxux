@@ -29,7 +29,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
         print("POST RECEIVED ", parser.path)
 
-        if parser.path == "/startcrack":
+        if parser.path == "/checkmd5":
             print("CHECK OUT MY CRACK YO", post_data)
 
             globals.CURRENT_SERVER_STATUS['isfound'] = False
@@ -56,9 +56,19 @@ class MyHandler(BaseHTTPRequestHandler):
 
             print("Cracking stopped")
 
-        if parser.path == "/result":
+        if parser.path == "/answermd5":
             make_stop_request(post_data['ip'][0], post_data['port'][0])
             print("RESULT:", post_data['resultstring'][0])
+
+        if parser.path == "/resourcereply":
+            print("I RECIEVED A RESPONCE FROM SLAVE")
+            globals.CURRENT_SERVER_STATUS['slaves'].append({
+                'ip': "http://" + post_data['ip'][0] + ":" + post_data['port'][0],
+                'resource_amount': post_data['resource'][0]
+            })
+
+            if len(globals.CURRENT_SERVER_STATUS['slaves']) == 3:
+                print(globals.CURRENT_SERVER_STATUS['slaves'])
 
     def do_GET(s):
         """Respond to a GET request."""
@@ -101,17 +111,6 @@ class MyHandler(BaseHTTPRequestHandler):
             if not globals.CURRENT_SERVER_STATUS['waiting']:
                 print('I must respond')
                 make_ready_response(qs['sendip'][0] + ":" + qs['sendport'][0])
-
-        if parser.path == "/ready":
-            qs = parse_qs(parser.query)
-            print("I RECIEVED A RESPONCE FROM SLAVE")
-            globals.CURRENT_SERVER_STATUS['slaves'].append({
-                'ip': "http://" + qs['sendip'][0] + ":" + qs['sendport'][0],
-                'resource_amount': qs['available'][0]
-            })
-
-            if len(globals.CURRENT_SERVER_STATUS['slaves']) == 3:
-                print(globals.CURRENT_SERVER_STATUS['slaves'])
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

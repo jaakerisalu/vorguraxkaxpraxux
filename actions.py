@@ -27,22 +27,24 @@ def get_machines():
     return loc + res
 
 
-def make_stop_request(ip, port):
-    dont_ask_url = "http://" + ip + ":" + port
+def make_ready_response(target):
 
-    for slave in globals.CURRENT_SERVER_STATUS['slaves']:
-        if slave['ip'] != dont_ask_url:
+    values = {
+        "ip": socket.gethostbyname(socket.gethostname()),
+        "port": str(globals.CURRENT_SERVER_STATUS['port']),
+        "resource": random.randint(0, 100),
+    }
 
-            print("Stopping", slave['ip'])
+    url = "http://" + target + "/resourcereply"
 
-            req = urlr.Request(slave['ip'] + "/stopcrack")
-            try:
-                response = urlr.urlopen(req, timeout=1)
-                r = response.read()
-            except URLError as e:
-                print("Something is fukt, more specifically: " + str(e.reason))
-            except socket.timeout as e:
-                print("Socket timed out, moving on")
+    data = urllib.parse.urlencode(values)
+    binary_data = data.encode('utf-8')
+    req = urlr.Request(url, binary_data)
+    try:
+        print("Req", req)
+        response = urlr.urlopen(req, timeout=1)
+    except urlr.http.client.HTTPException as e:
+        print(e)
 
 
 def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar", ip=None, port=None):
@@ -53,7 +55,9 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar", ip=None, por
     machines = get_machines()
 
     # If there's a previous noask list, filter out machines we don't want to send to
-    # TODO: Add sender IP to noask
+    noask.append("http://" + str(socket.gethostbyname(socket.gethostname())) + ":"
+                 + str(globals.CURRENT_SERVER_STATUS['port']))
+
     if len(noask):
         machines = [x for x in machines if x not in noask]
 
@@ -66,8 +70,8 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar", ip=None, por
 
     params = "/resource?sendip=" + (socket.gethostbyname(socket.gethostname()) if not ip else ip) \
              + "&sendport=" + (str(globals.CURRENT_SERVER_STATUS['port']) if not ip else port) \
-             + "&ttl=" + str(ttl)\
-             + "&id=" + str(id)\
+             + "&ttl=" + str(ttl) \
+             + "&id=" + str(id) \
              + "&noask=" + noask_list
     print(params)
 
@@ -81,68 +85,6 @@ def make_resource_request(noask=None, ttl=5, id="gregorjaakrannar", ip=None, por
             print("Something is fukt, more specifically: " + str(e.reason))
         except socket.timeout as e:
             print("Socket timed out, moving on")
-
-
-def make_ready_response(target):
-
-    params = "/ready?sendip=" + socket.gethostbyname(socket.gethostname())\
-             + "&sendport=" + str(globals.CURRENT_SERVER_STATUS['port'])\
-             + "&available=%d" % random.randint(0, 100)
-    req = urlr.Request("http://" + target + params)
-    print("Trying to request: " + "http://" + target + params)
-    try:
-        response = urlr.urlopen(req, timeout=1)
-        r = response.read()
-    except URLError as e:
-        print("Success response failed " + str(e.reason))
-    except socket.timeout as e:
-        print("Socket timed out on success")
-
-
-def make_result_found_request(my_ip, my_port, ip, port, md5, result, resultstring):
-
-    url = "http://" + ip + ":" + port + "/result"
-
-    values = {
-        "ip": my_ip,
-        "port": my_port,
-        "md5": md5,
-        "result": result,
-        "resultstring": resultstring
-    }
-
-    print("STOPPING", url)
-    data = urllib.parse.urlencode(values)
-    binary_data = data.encode('utf-8')
-    req = urlr.Request(url, binary_data)
-    try:
-        print("Req", req)
-        response = urlr.urlopen(req, timeout=1)
-    except urlr.http.client.HTTPException as e:
-        print(e)
-
-
-def make_assignment(ip, tasks, md5):
-    wildcard = "?"
-
-    print("POSTIN CRACK ASSIGNMENT")
-    url = ip + "/startcrack"
-    values = {
-        "ip": socket.gethostbyname(socket.gethostname()),
-        "port": globals.CURRENT_SERVER_STATUS['port'],
-        "md5": md5,
-        "ranges": tasks,
-        "wildcard": wildcard,
-    }
-
-    data = urllib.parse.urlencode(values)
-    binary_data = data.encode('utf-8')
-    req = urlr.Request(url, binary_data)
-    try:
-        print("Req", req)
-        response = urlr.urlopen(req, timeout=1)
-    except urlr.http.client.HTTPException as e:
-        print(e)
 
 
 def init_cracker(md):
@@ -169,4 +111,69 @@ def init_cracker(md):
             threes = threes[int(each/2):]
             fours = fours[int(each/2):]
         make_assignment(slave['ip'], tasks, md)
+
+
+def make_assignment(ip, tasks, md5):
+    wildcard = "?"
+
+    print("POSTIN CRACK ASSIGNMENT")
+
+    url = ip + "/checkmd5"
+    values = {
+        "ip": socket.gethostbyname(socket.gethostname()),
+        "port": globals.CURRENT_SERVER_STATUS['port'],
+        "md5": md5,
+        "ranges": tasks,
+        "wildcard": wildcard,
+    }
+
+    data = urllib.parse.urlencode(values)
+    binary_data = data.encode('utf-8')
+    req = urlr.Request(url, binary_data)
+    try:
+        print("Req", req)
+        response = urlr.urlopen(req, timeout=1)
+    except urlr.http.client.HTTPException as e:
+        print(e)
+
+
+def make_result_found_request(my_ip, my_port, ip, port, md5, result, resultstring):
+
+    url = "http://" + ip + ":" + port + "/answermd5"
+
+    values = {
+        "ip": my_ip,
+        "port": my_port,
+        "md5": md5,
+        "result": result,
+        "resultstring": resultstring
+    }
+
+    print("STOPPING", url)
+    data = urllib.parse.urlencode(values)
+    binary_data = data.encode('utf-8')
+    req = urlr.Request(url, binary_data)
+    try:
+        print("Req", req)
+        response = urlr.urlopen(req, timeout=1)
+    except urlr.http.client.HTTPException as e:
+        print(e)
+
+
+def make_stop_request(ip, port):
+    dont_ask_url = "http://" + ip + ":" + port
+
+    for slave in globals.CURRENT_SERVER_STATUS['slaves']:
+        if slave['ip'] != dont_ask_url:
+
+            print("Stopping", slave['ip'])
+
+            req = urlr.Request(slave['ip'] + "/stopcrack")
+            try:
+                response = urlr.urlopen(req, timeout=1)
+                r = response.read()
+            except URLError as e:
+                print("Something is fukt, more specifically: " + str(e.reason))
+            except socket.timeout as e:
+                print("Socket timed out, moving on")
 
