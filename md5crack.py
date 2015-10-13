@@ -9,7 +9,7 @@ class Md5Cracker:
     #     self.wildcard = wildcard
 
     def start(self, tocrack, template, wildcard):
-        print("Hash to crack:", tocrack)
+        print("Hash to crack:", tocrack, "| template:", template)
 
         res = self.md5_crack(tocrack, template, wildcard)
 

@@ -44,12 +44,15 @@ class MyHandler(BaseHTTPRequestHandler):
             for template in template_list:
                 if globals.CURRENT_SERVER_STATUS['isfound'] is False:
 
+                    if template.strip(wildcard) == '':
+                        continue
+
                     res = cracker.start(md5, template, wildcard)
 
                     if res is not None:
                         make_result_found_request(socket.gethostbyname(socket.gethostname()), globals.CURRENT_SERVER_STATUS['port'],
                                               post_data['ip'][0], post_data['port'][0], md5, 0, res)
-                        return
+                        break
 
         if parser.path == "/result":
             make_stop_request(post_data['ip'][0], post_data['port'][0])
