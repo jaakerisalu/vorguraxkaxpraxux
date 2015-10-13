@@ -58,6 +58,8 @@ class MyHandler(BaseHTTPRequestHandler):
 
         if parser.path == "/answermd5":
             make_stop_request(post_data['ip'][0], post_data['port'][0])
+            #THIS IS NOT WORKING ATM
+            s.wfile.write(bytes("<p>Slave at %s:%s found solution - %s" % (post_data['ip'][0], post_data['port'][0], post_data['resultstring'][0]), 'UTF-8'))
             print("RESULT:", post_data['resultstring'][0])
 
         if parser.path == "/resourcereply":
@@ -79,17 +81,23 @@ class MyHandler(BaseHTTPRequestHandler):
         print('GET')
 
         parser = urlparse(s.path)
-
+        s.wfile.write(bytes("<html><head><title>P2P MD5 Cracking network</title></head><p>Accessed path %s on server 127.0.0.1:%s</p></html>" % (s.path, globals.CURRENT_SERVER_STATUS['port']), 'UTF-8'))
         print(parser)
 
         if parser.path == "/crack":
+            s.wfile.write(bytes("<html><p>Initiating slave master, gathering slaves ...</p></html>", 'UTF-8'))
             qs = parse_qs(parser.query)
             print('MD5', qs['md5'])
             make_resource_request(noask=["http://127.0.0.1:%s" % globals.CURRENT_SERVER_STATUS['port']], ttl=5, id='yolocrack')
             # CURRENT_SERVER_STATUS['waiting'] = True
             time.sleep(5)
             # CURRENT_SERVER_STATUS['waiting'] = False
+            slaveindex = 0
+            for slave in globals.CURRENT_SERVER_STATUS['slaves']:
+                s.wfile.write(bytes("Slave %s - %s<br>" % (slaveindex, slave['ip']), 'UTF-8'))
+                slaveindex += 1
             init_cracker(qs['md5'][0])
+            s.wfile.write(bytes("<p>Initiating cracking on hash - %s</p>" % qs['md5'][0], 'UTF-8'))
 
         if parser.path == "/stopcrack":
             globals.CURRENT_SERVER_STATUS['isfound'] = True
